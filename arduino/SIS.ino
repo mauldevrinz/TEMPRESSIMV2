@@ -1,11 +1,20 @@
 /*
  * SIS.ino — Safety Instrumented System (ESP32)
- * Updated: Temperature Setpoint Control via MQTT
+ * Updated: Temperature-based SV1 Control
  * 
  * MQTT Topics:
  *   Publish : plant/data/pressure   → JSON { pressure, voltage, sv1_state, sv2_state, alarm_status }
- *   Subscribe: admin/control/sis    → JSON { parameter, value }
- *              admin/control/setpoints → JSON { parameter: "temp", value: 105 }
+ *   Subscribe: admin/control/sis    → JSON { parameter, value } for manual/limits
+ *              admin/control/setpoints → JSON { parameter: "temp", value: 105 } for setpoint
+ *              plant/data/temperature  → JSON { temperature: 85.5 } from BPCS Arduino
+ * 
+ * Temperature Control Logic:
+ *   - Receives actual temperature from BPCS Arduino via plant/data/temperature
+ *   - Receives setpoint from frontend via admin/control/setpoints
+ *   - When tempSetpoint > 0:
+ *     * If actualTemp >= setpoint → CLOSE SV1 (stop heating)
+ *     * If actualTemp < setpoint → OPEN SV1 (allow heating)
+ *   - Safety shutdown always takes priority
  */
 
 #include <Arduino.h>
@@ -31,12 +40,13 @@ const float V_ZERO = 0.417f;   // Tegangan offset sensor pada 0 Bar
 // ===== DEFAULT SETPOINT =====
 float alarmPressure    = 1.0f;
 float shutdownPressure = 1.3f;
-float tempSetpoint     = 0.0f;  // NEW: Temperature setpoint for SV1 control
+float tempSetpoint     = 0.0f;  // Temperature setpoint from frontend
+float actualTemp       = 0.0f;  // Actual temperature from BPCS Arduino
 
 // ===== HYSTERESIS =====
 const float ALARM_HYSTERESIS    = 0.15f;
 const float SHUTDOWN_HYSTERESIS = 0.15f;
-const float TEMP_HYSTERESIS     = 2.0f;  // NEW: 2°C hysteresis for temp control
+const float TEMP_HYSTERESIS     = 2.0f;  // 2°C hysteresis for temp control
 
 // ===== DEBOUNCING ALARM & SHUTDOWN =====
 const int           DEBOUNCE_SAMPLES  = 12;
@@ -63,7 +73,8 @@ const char* MQTT_USER  = "auliazqi";
 const char* MQTT_PASS  = "Serveradmin123";
 const char* TOPIC_PUB  = "plant/data/pressure";
 const char* TOPIC_SUB_SIS  = "admin/control/sis";
-const char* TOPIC_SUB_SETPOINT = "admin/control/setpoints";  // UPDATED: Subscribe to setpoint topic
+const char* TOPIC_SUB_SETPOINT = "admin/control/setpoints";  // Setpoint from frontend
+const char* TOPIC_SUB_TEMP = "plant/data/temperature";  // Temperature from BPCS Arduino
 
 WiFiClientSecure espClient;
 PubSubClient     mqttClient(espClient);
@@ -146,6 +157,19 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   for (unsigned int i = 0; i < length; i++) msg += (char)payload[i];
   Serial.printf("\n[MQTT IN] Topic: %s, Msg: %s\n", topic, msg.c_str());
 
+  // Handle temperature data from BPCS Arduino
+  if (strcmp(topic, TOPIC_SUB_TEMP) == 0) {
+    StaticJsonDocument<256> doc;
+    if (deserializeJson(doc, msg) == DeserializationError::Ok) {
+      if (doc.containsKey("temperature")) {
+        actualTemp = doc["temperature"];
+        Serial.printf("🌡️ Actual Temperature: %.2f°C\n", actualTemp);
+      }
+    }
+    return;
+  }
+
+  // Handle control parameters (setpoint, pressure limits, manual control)
   StaticJsonDocument<256> doc;
   if (deserializeJson(doc, msg) != DeserializationError::Ok) {
     Serial.println("❌ JSON parse error");
@@ -173,12 +197,12 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     setManualSV2(val == 1);
     Serial.printf("🔧 SV2 MANUAL → %s\n", val == 1 ? "CLOSE" : "OPEN");
 
-  } else if (strcmp(param, "temp") == 0) {  // UPDATED: Handle "temp" parameter from backend setpoint API
+  } else if (strcmp(param, "temp") == 0) {
     tempSetpoint = val;
     if (tempSetpoint > 0) {
-      Serial.printf("🌡️ Temperature Setpoint → %.2f°C | Control ON\n", val);
+      Serial.printf("✅ Temperature Setpoint → %.2f°C | Control ACTIVE\n", val);
     } else {
-      Serial.printf("🌡️ Temperature Control OFF\n");
+      Serial.printf("✅ Temperature Control DISABLED\n");
     }
   }
 }
@@ -210,10 +234,12 @@ void mqttReconnect() {
   String clientId = "ESP32_SIS_" + String(random(0xffff), HEX);
   if (mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)) {
     mqttClient.subscribe(TOPIC_SUB_SIS);
-    mqttClient.subscribe(TOPIC_SUB_SETPOINT);  // UPDATED: subscribe to setpoint topic
-    Serial.println("✅ MQTT Connected");
-    Serial.printf("   - Subscribed: %s\n", TOPIC_SUB_SIS);
-    Serial.printf("   - Subscribed: %s\n", TOPIC_SUB_SETPOINT);
+    mqttClient.subscribe(TOPIC_SUB_SETPOINT);
+    mqttClient.subscribe(TOPIC_SUB_TEMP);
+    Serial.println("✅ MQTT Connected, Subscribed to:");
+    Serial.printf("   - %s\n", TOPIC_SUB_SIS);
+    Serial.printf("   - %s\n", TOPIC_SUB_SETPOINT);
+    Serial.printf("   - %s\n", TOPIC_SUB_TEMP);
   } else {
     Serial.printf("❌ MQTT Fail rc=%d\n", mqttClient.state());
   }
@@ -420,29 +446,29 @@ void loop() {
   // --- 5. SAFETY LOGIC ---
   updateAlarmDebounce();
   updateShutdownDebounce();
-  updateTempControlDebounce();  // NEW
 
-  // --- 6. ACTUATOR OUTPUT (UPDATED) ---
+  // --- 6. ACTUATOR OUTPUT (UPDATED: Temperature-based control) ---
   if (!isManualActive()) {
     if (shutdownActive || rawPressure >= 1.2f) {
       // Safety shutdown priority
       digitalWrite(RELAY1_PIN, LOW);  SV1state = "OPEN";
       digitalWrite(RELAY2_PIN, HIGH); SV2state = "CLOSE";
     } 
-    else if (tempControlActive && tempSetpoint > 0) {
-      // Temperature setpoint control mode (NEW)
-      if (!tempBelowThreshold) {
-        // Pressure >= setpoint: CLOSE SV1 to stop increase
+    else if (tempSetpoint > 0) {
+      // Temperature setpoint control mode
+      // Logic: if actual_temp >= setpoint → CLOSE SV1, else → OPEN SV1
+      if (actualTemp >= tempSetpoint) {
+        // Reached setpoint: CLOSE SV1 to stop heating
         digitalWrite(RELAY1_PIN, HIGH); SV1state = "CLOSE";
         digitalWrite(RELAY2_PIN, LOW);  SV2state = "OPEN";
       } else {
-        // Pressure < setpoint: OPEN SV1 to allow increase
+        // Below setpoint: OPEN SV1 to allow heating
         digitalWrite(RELAY1_PIN, LOW);  SV1state = "OPEN";
         digitalWrite(RELAY2_PIN, LOW);  SV2state = "OPEN";
       }
     }
     else {
-      // Normal operation
+      // Normal operation (no setpoint)
       digitalWrite(RELAY1_PIN, LOW);  SV1state = "OPEN";
       digitalWrite(RELAY2_PIN, LOW);  SV2state = "OPEN";
     }
