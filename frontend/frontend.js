@@ -405,10 +405,35 @@ const App = (() => {
 
     /**
      * toggleSV1FromTemp() — called by Temperature "Set" button
-     * Toggles SV1 (Solenoid Valve 1) - same as clicking SV1 button in pressure tab
+     * Sends temperature setpoint to backend API
      */
     async function toggleSV1FromTemp() {
-        await toggleActuator('sv1');
+        const tempInput = document.getElementById('set-temp');
+        const tempValue = parseFloat(tempInput.value);
+        
+        if (isNaN(tempValue) || tempValue <= 0) {
+            alert('Masukkan nilai temperature yang valid (> 0)');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${backendUrl}/api/control/setpoint/temp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ value: tempValue })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                console.log(`✅ Temperature Setpoint sent: ${tempValue}°C`);
+                alert(`Temperature setpoint set to ${tempValue}°C`);
+            } else {
+                alert(`❌ Error: ${data.message}`);
+            }
+        } catch (error) {
+            console.error('Error sending temperature:', error);
+            alert('❌ Failed to send temperature setpoint');
+        }
     }
 
     /** Set button color + text to match valve state */
