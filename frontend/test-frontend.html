@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Test - Thermometer & Chart Scale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+
+        /* Thermometer Styles */
+        .thermometer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .thermometer {
+            width: 60px;
+            height: 200px;
+            border: 3px solid #1e40af;
+            border-radius: 0 0 30px 30px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .thermometer-bulb {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 3px solid #1e40af;
+        }
+
+        .thermometer-liquid {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            background: linear-gradient(to top, #ef4444 0%, #dc2626 100%);
+            border-radius: 10px;
+            transition: height 0.3s ease-in-out;
+            box-shadow: inset 0 0 5px rgba(220, 38, 38, 0.5);
+        }
+
+        .thermometer-scale {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px 0;
+            pointer-events: none;
+        }
+
+        .thermometer-tick {
+            display: flex;
+            align-items: center;
+            font-size: 8px;
+            color: #1e40af;
+            font-weight: bold;
+        }
+
+        .thermometer-tick span {
+            width: 15px;
+            height: 1px;
+            background: #1e40af;
+            margin-right: 3px;
+        }
+
+        .thermometer-value {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #dc2626;
+            min-width: 60px;
+        }
+
+        .thermometer-label {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .graph-area {
+            height: 200px;
+        }
+
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .controls input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            width: 100px;
+        }
+
+        .controls button {
+            padding: 8px 16px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .controls button:hover {
+            background: #2563eb;
+        }
+
+        .content {
+            display: flex;
+            gap: 20px;
+        }
+
+        .thermometer-section {
+            flex: 0 0 200px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .chart-section {
+            flex: 1;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="test-container">
+    <h1 style="font-size: 24px; margin-bottom: 20px; color: #1f2937;">🧪 Frontend Changes Test</h1>
+    
+    <div class="controls">
+        <label>Temperature (°C):</label>
+        <input type="number" id="tempInput" min="0" max="150" value="75" step="5">
+        <button onclick="updateTemperature()">Update</button>
+        <button onclick="animateTemperature()">Animate Test</button>
+    </div>
+
+    <div class="content">
+        <div class="thermometer-section">
+            <h2>Thermometer</h2>
+            <div class="thermometer-container">
+                <div class="thermometer">
+                    <div class="thermometer-scale">
+                        <div class="thermometer-tick"><span></span>150°</div>
+                        <div class="thermometer-tick"><span></span>120°</div>
+                        <div class="thermometer-tick"><span></span>90°</div>
+                        <div class="thermometer-tick"><span></span>60°</div>
+                        <div class="thermometer-tick"><span></span>30°</div>
+                        <div class="thermometer-tick"><span></span>0°</div>
+                    </div>
+                    <div id="thermometer-liquid" class="thermometer-liquid" style="height: 50%;"></div>
+                    <div class="thermometer-bulb"></div>
+                </div>
+                <div class="thermometer-value" id="thermometer-display-value">75.00 °C</div>
+                <div class="thermometer-label">Current Temperature</div>
+            </div>
+        </div>
+
+        <div class="chart-section">
+            <h2>Temperature Chart (Fixed Scale 0-150°C)</h2>
+            <div class="graph-area">
+                <canvas id="tempChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize chart with fixed 0-150 scale
+const ctx = document.getElementById('tempChart').getContext('2d');
+const tempChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Temperature (°C)',
+            data: [],
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+            tension: 0.3,
+            fill: true,
+            borderWidth: 2,
+            pointRadius: 4,
+            pointBackgroundColor: '#ef4444'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                min: 0,
+                max: 150,
+                ticks: { stepSize: 30 },
+                title: { display: true, text: 'Temperature (°C)' }
+            },
+            x: {
+                title: { display: true, text: 'Time (seconds)' }
+            }
+        },
+        plugins: {
+            legend: { display: true, position: 'top' }
+        }
+    }
+});
+
+let sampleCount = 0;
+
+function updateTemperature() {
+    const temp = parseFloat(document.getElementById('tempInput').value);
+    updateThermometer(temp);
+    addChartData(temp);
+}
+
+function updateThermometer(temp) {
+    const MAX_THERMOMETER_TEMP = 150;
+    const thermometerHeightPercent = Math.min(100, (temp / MAX_THERMOMETER_TEMP) * 100);
+    document.getElementById('thermometer-liquid').style.height = `${thermometerHeightPercent}%`;
+    document.getElementById('thermometer-display-value').textContent = `${temp.toFixed(2)} °C`;
+}
+
+function addChartData(temp) {
+    sampleCount++;
+    tempChart.data.labels.push(`${sampleCount}s`);
+    tempChart.data.datasets[0].data.push(temp);
+    
+    // Keep only last 20 points
+    if (tempChart.data.labels.length > 20) {
+        tempChart.data.labels.shift();
+        tempChart.data.datasets[0].data.shift();
+    }
+    
+    tempChart.update('none');
+}
+
+function animateTemperature() {
+    const temps = [30, 45, 60, 75, 90, 105, 120, 110, 95, 80, 65, 50, 40, 35, 45, 65, 95, 110, 100, 75];
+    let index = 0;
+    
+    const interval = setInterval(() => {
+        if (index < temps.length) {
+            updateThermometer(temps[index]);
+            addChartData(temps[index]);
+            document.getElementById('tempInput').value = temps[index];
+            index++;
+        } else {
+            clearInterval(interval);
+        }
+    }, 500);
+}
+
+// Initialize with default value
+updateTemperature();
+</script>
+
+</body>
+</html>

@@ -93,9 +93,98 @@
             overflow-y: auto;
         }
 
-        /* Graph Height Adjustment (Diturunkan) */
+        /* Graph Height Adjustment */
         .graph-area {
-            height: 100px; /* Diperkecil */
+            height: 250px; /* Diperbesar untuk visibility lebih baik */
+        }
+
+        /* Thermometer Styles */
+        .thermometer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .thermometer {
+            width: 70px;
+            height: 200px;
+            border: 3px solid #1e40af;
+            border-radius: 0 0 30px 30px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
+            position: relative;
+            overflow: visible;
+            box-shadow: 0 0 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .thermometer-bulb {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 3px solid #1e40af;
+        }
+
+        .thermometer-liquid {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            background: linear-gradient(to top, #ef4444 0%, #dc2626 100%);
+            border-radius: 10px;
+            transition: height 0.3s ease-in-out;
+            box-shadow: inset 0 0 5px rgba(220, 38, 38, 0.5);
+        }
+
+        .thermometer-scale {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px 0;
+            pointer-events: none;
+        }
+
+        .thermometer-tick {
+            display: flex;
+            align-items: center;
+            font-size: 9px;
+            color: #1e40af;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .thermometer-tick span {
+            width: 12px;
+            height: 1px;
+            background: #1e40af;
+            margin-right: 2px;
+            flex-shrink: 0;
+        }
+
+        .thermometer-value {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #dc2626;
+            min-width: 80px;
+            margin-top: 8px;
+        }
+
+        .thermometer-label {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -143,11 +232,23 @@
                 <!-- Layout Utama: Kolom di Desktop, Stack di Mobile -->
                 <div class="flex flex-col lg:flex-row lg:space-x-4 space-y-2 lg:space-y-0">
 
-                    <!-- KIRI (1/3): SIMULASI TANGKI / WADAH -->
-                    <div class="lg:w-1/3 flex justify-center items-center p-1 bg-gray-50 rounded-lg shadow-inner lg:min-h-[500px] min-h-[280px]">
-                        <div class="vessel-3d">
-                            <!-- Air/Isi Panci -->
-                            <div id="liquid-level" class="liquid" style="height: 50%;"></div>
+                    <!-- KIRI (1/3): THERMOMETER DISPLAY -->
+                    <div class="lg:w-1/3 flex justify-center items-center p-2 bg-gray-50 rounded-lg shadow-inner lg:min-h-[500px] min-h-[280px]">
+                        <div class="thermometer-container">
+                            <div class="thermometer">
+                                <div class="thermometer-scale">
+                                    <div class="thermometer-tick"><span></span>150°</div>
+                                    <div class="thermometer-tick"><span></span>120°</div>
+                                    <div class="thermometer-tick"><span></span>90°</div>
+                                    <div class="thermometer-tick"><span></span>60°</div>
+                                    <div class="thermometer-tick"><span></span>30°</div>
+                                    <div class="thermometer-tick"><span></span>0°</div>
+                                </div>
+                                <div id="thermometer-liquid" class="thermometer-liquid" style="height: 40%;"></div>
+                                <div class="thermometer-bulb"></div>
+                            </div>
+                            <div class="thermometer-value" id="thermometer-display-value">96.82 °C</div>
+                            <div class="thermometer-label">Current Temperature</div>
                         </div>
                     </div>
 
@@ -166,7 +267,7 @@
                                         <label>Temperature</label>
                                         <input type="number" value="105" class="control-input" id="set-temp">
                                         <span>°C</span>
-                                        <button class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded hover:bg-blue-700 transition" data-input-id="set-temp" onclick="setControlValue(this)">Set</button>
+                                        <button class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded hover:bg-blue-700 transition" data-input-id="set-temp" onclick="toggleSV1FromTemp(this)">Set</button>
                                     </div>
 
                                     <!-- Sampling Time Row -->

@@ -121,6 +121,7 @@ const App = (() => {
         window.toggleActuator = toggleActuator;
         window.sendStepperCommand = sendStepperCommand;
         window.toggleStepperMode = toggleStepperMode;
+        window.toggleSV1FromTemp = toggleSV1FromTemp;
     }
 
     // ======================================================================
@@ -402,6 +403,14 @@ const App = (() => {
         }
     }
 
+    /**
+     * toggleSV1FromTemp() — called by Temperature "Set" button
+     * Toggles SV1 (Solenoid Valve 1) - same as clicking SV1 button in pressure tab
+     */
+    async function toggleSV1FromTemp() {
+        await toggleActuator('sv1');
+    }
+
     /** Set button color + text to match valve state */
     function applyActuatorButtonStyle(btn, state) {
         // keep the hover/cursor/transition classes, only swap bg color
@@ -597,7 +606,18 @@ const App = (() => {
             tempChart = new Chart(ctx, {
                 type: 'line',
                 data: { labels: [], datasets: [{ label: 'Suhu (°C)', data: [], borderColor: '#ef4444', tension: 0.3 }] },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            min: 0,
+                            max: 150,
+                            ticks: { stepSize: 30 }
+                        } 
+                    } 
+                }
             });
         }
 
@@ -890,9 +910,15 @@ const App = (() => {
         // update current temp display
         if (dom.monitorCurrentTemp) dom.monitorCurrentTemp.textContent = `${currentTemp.toFixed(2)} °C`;
 
-        // tank height (simple linear mapping)
-        const liquidHeightPercent = Math.min(100, (currentTemp / MAX_TEMP_DISPLAY) * 100);
-        if (dom.liquidLevel) dom.liquidLevel.style.height = `${liquidHeightPercent}%`;
+        // Update thermometer liquid height (0-150°C scale)
+        const MAX_THERMOMETER_TEMP = 150;
+        const thermometerHeightPercent = Math.min(100, (currentTemp / MAX_THERMOMETER_TEMP) * 100);
+        const thermometerLiquid = document.getElementById('thermometer-liquid');
+        if (thermometerLiquid) thermometerLiquid.style.height = `${thermometerHeightPercent}%`;
+        
+        // Update thermometer value display
+        const thermometerValue = document.getElementById('thermometer-display-value');
+        if (thermometerValue) thermometerValue.textContent = `${currentTemp.toFixed(2)} °C`;
     }
 
     // ======================================================================
