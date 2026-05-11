@@ -15,7 +15,7 @@ const App = (() => {
     // ======================================================================
     // 1) CONSTANTS & GLOBAL STATE
     // ======================================================================
-    const backendUrl = 'http://localhost:3000'
+    const backendUrl = 'http://72.62.120.229:3000'
 
     // Display / physical constants
     const MAX_TEMP_DISPLAY = 120;       // untuk visual tank
