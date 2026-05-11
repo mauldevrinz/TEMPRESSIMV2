@@ -405,7 +405,7 @@ const App = (() => {
 
     /**
      * toggleSV1FromTemp() — called by Temperature "Set" button
-     * Sends temperature setpoint to backend API
+     * Sends temperature setpoint to backend API + shows modal
      */
     async function toggleSV1FromTemp() {
         const tempInput = document.getElementById('set-temp');
@@ -426,7 +426,9 @@ const App = (() => {
             const data = await response.json();
             if (data.success) {
                 console.log(`✅ Temperature Setpoint sent: ${tempValue}°C`);
-                alert(`Temperature setpoint set to ${tempValue}°C`);
+                // Show modal instead of alert
+                document.getElementById('modalTempValue').textContent = `${tempValue}°C`;
+                showTemperatureModal();
             } else {
                 alert(`❌ Error: ${data.message}`);
             }
@@ -434,6 +436,18 @@ const App = (() => {
             console.error('Error sending temperature:', error);
             alert('❌ Failed to send temperature setpoint');
         }
+    }
+
+    /** Show temperature modal */
+    function showTemperatureModal() {
+        const modal = document.getElementById('tempSetModal');
+        modal.classList.remove('hidden');
+    }
+
+    /** Close temperature modal */
+    window.closeTemperatureModal = function() {
+        const modal = document.getElementById('tempSetModal');
+        modal.classList.add('hidden');
     }
 
     /** Set button color + text to match valve state */
