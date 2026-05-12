@@ -24,7 +24,7 @@ const App = (() => {
 
     // Sampling defaults
     const DEFAULT_T_SAMPLING = 1;       // seconds for pressure simulation if not overridden
-    const MAX_DATA_POINTS = 20;
+    const MAX_DATA_POINTS = 200;
 
     // Chart instances
     let tempChart = null;
