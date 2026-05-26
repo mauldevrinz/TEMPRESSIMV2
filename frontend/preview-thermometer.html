@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview - Thermometer & Furnace Vessel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1f2937;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .display-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        /* Thermometer Styles */
+        .thermometer-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .thermometer {
+            width: 70px;
+            height: 200px;
+            border: 3px solid #1e40af;
+            border-radius: 0 0 30px 30px;
+            background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 100%);
+            position: relative;
+            overflow: visible;
+            box-shadow: 0 0 15px rgba(30, 64, 175, 0.3);
+        }
+
+        .thermometer-bulb {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 3px solid #1e40af;
+        }
+
+        .thermometer-liquid {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            background: linear-gradient(to top, #ef4444 0%, #dc2626 100%);
+            border-radius: 10px;
+            transition: height 0.5s ease-in-out;
+            box-shadow: inset 0 0 5px rgba(220, 38, 38, 0.5);
+        }
+
+        .thermometer-scale {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 5px 0;
+            pointer-events: none;
+        }
+
+        .thermometer-tick {
+            display: flex;
+            align-items: center;
+            font-size: 9px;
+            color: #1e40af;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .thermometer-tick span {
+            width: 12px;
+            height: 1px;
+            background: #1e40af;
+            margin-right: 2px;
+            flex-shrink: 0;
+        }
+
+        .thermometer-value {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #dc2626;
+            min-width: 80px;
+            margin-top: 8px;
+        }
+
+        .thermometer-label {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* Plant Vessel Styles */
+        .plant-vessel-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vessel-graphic {
+            position: relative;
+            width: 160px;
+            height: 120px;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+        }
+
+        .vessel-label {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .temp-input-section {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .temp-button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #3b82f6;
+            color: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .temp-button:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .temp-input {
+            padding: 8px 12px;
+            border: 2px solid #3b82f6;
+            border-radius: 6px;
+            font-size: 14px;
+            width: 80px;
+            text-align: center;
+        }
+
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌡️ Temperature Indicator Preview</h1>
+        <p class="subtitle">Thermometer + Furnace Vessel Visualization</p>
+
+        <div class="display-section">
+            <!-- Thermometer -->
+            <div class="thermometer-container">
+                <div class="thermometer">
+                    <div class="thermometer-scale">
+                        <div class="thermometer-tick"><span></span>150°</div>
+                        <div class="thermometer-tick"><span></span>120°</div>
+                        <div class="thermometer-tick"><span></span>90°</div>
+                        <div class="thermometer-tick"><span></span>60°</div>
+                        <div class="thermometer-tick"><span></span>30°</div>
+                        <div class="thermometer-tick"><span></span>0°</div>
+                    </div>
+                    <div id="thermometer-liquid" class="thermometer-liquid" style="height: 40%;"></div>
+                    <div class="thermometer-bulb"></div>
+                </div>
+                <div class="thermometer-value" id="thermometer-display-value">75.50 °C</div>
+                <div class="thermometer-label">Current Temperature</div>
+            </div>
+
+            <!-- Plant Vessel -->
+            <div class="plant-vessel-section">
+                <svg class="vessel-graphic" viewBox="0 0 160 120" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="vesselGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#1e3a8a;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+                        </linearGradient>
+                        <linearGradient id="liquidGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:0.8" />
+                            <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:0.9" />
+                        </linearGradient>
+                    </defs>
+                    
+                    <!-- Main vessel body -->
+                    <rect x="35" y="10" width="90" height="80" rx="8" ry="8" fill="none" stroke="url(#vesselGradient)" stroke-width="3"/>
+                    
+                    <!-- Liquid inside vessel (dynamic height) -->
+                    <rect id="vessel-liquid" x="38" y="60" width="84" height="27" rx="6" ry="6" fill="url(#liquidGradient)"/>
+                    
+                    <!-- Vessel cap/top -->
+                    <rect x="40" y="5" width="80" height="8" rx="2" ry="2" fill="#1e3a8a" stroke="#0f172a" stroke-width="1"/>
+                    
+                    <!-- Heater indicator -->
+                    <circle cx="50" cy="45" r="5" fill="#ef4444" opacity="0.7"/>
+                    <circle cx="110" cy="45" r="5" fill="#ef4444" opacity="0.7"/>
+                    
+                    <!-- Temperature indicator icon -->
+                    <text x="80" y="50" font-size="20" font-weight="bold" text-anchor="middle" fill="#dc2626">🔥</text>
+                </svg>
+                <div class="vessel-label">Pressure Vessel (Furnace)</div>
+            </div>
+
+            <!-- Temperature Controls -->
+            <div class="temp-input-section">
+                <input type="number" id="tempInput" class="temp-input" value="75.50" min="0" max="150" step="0.1">
+                <button class="temp-button" onclick="setTemp(30)">Cold (30°)</button>
+                <button class="temp-button" onclick="setTemp(75)">Normal (75°)</button>
+                <button class="temp-button" onclick="setTemp(120)">Hot (120°)</button>
+            </div>
+
+            <div class="info-box">
+                ℹ️ <strong>Interactive Preview:</strong> Gunakan tombol atau input untuk mengubah temperature. Thermometer dan Furnace vessel akan berubah secara real-time.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAX_THERMOMETER_TEMP = 150;
+
+        function updateVisualization(temp) {
+            // Update thermometer
+            const thermLiquid = document.getElementById('thermometer-liquid');
+            const thermValue = document.getElementById('thermometer-display-value');
+            const vesselLiquid = document.getElementById('vessel-liquid');
+            const tempInput = document.getElementById('tempInput');
+
+            const heightPercent = Math.min(100, (temp / MAX_THERMOMETER_TEMP) * 100);
+
+            // Thermometer liquid height
+            thermLiquid.style.height = `${heightPercent}%`;
+            thermValue.textContent = `${temp.toFixed(2)} °C`;
+
+            // Vessel liquid height
+            const maxHeight = 60;
+            const vesselHeight = (heightPercent / 100) * maxHeight;
+            vesselLiquid.setAttribute('height', vesselHeight.toString());
+            vesselLiquid.setAttribute('y', (86 - vesselHeight).toString());
+
+            tempInput.value = temp.toFixed(2);
+        }
+
+        function setTemp(value) {
+            updateVisualization(value);
+        }
+
+        // Listen to input changes
+        document.getElementById('tempInput').addEventListener('change', function() {
+            const value = parseFloat(this.value);
+            if (!isNaN(value) && value >= 0 && value <= 150) {
+                updateVisualization(value);
+            }
+        });
+
+        // Initialize with default value
+        updateVisualization(75.50);
+
+        // Optional: simulate slow temperature change
+        let tempDirection = 0.5;
+        let currentTemp = 75.50;
+        setInterval(() => {
+            currentTemp += tempDirection;
+            if (currentTemp >= 130) tempDirection = -0.5;
+            if (currentTemp <= 30) tempDirection = 0.5;
+            updateVisualization(currentTemp);
+        }, 100);
+    </script>
+</body>
+</html>

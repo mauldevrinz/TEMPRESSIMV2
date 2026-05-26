@@ -948,16 +948,25 @@ const App = (() => {
     function updateTempVisualization(currentTemp) {
         // update current temp display
         if (dom.monitorCurrentTemp) dom.monitorCurrentTemp.textContent = `${currentTemp.toFixed(2)} °C`;
-
+ 
         // Update thermometer liquid height (0-150°C scale)
         const MAX_THERMOMETER_TEMP = 150;
         const thermometerHeightPercent = Math.min(100, (currentTemp / MAX_THERMOMETER_TEMP) * 100);
         const thermometerLiquid = document.getElementById('thermometer-liquid');
         if (thermometerLiquid) thermometerLiquid.style.height = `${thermometerHeightPercent}%`;
-        
+         
         // Update thermometer value display
         const thermometerValue = document.getElementById('thermometer-display-value');
         if (thermometerValue) thermometerValue.textContent = `${currentTemp.toFixed(2)} °C`;
+
+        // Update vessel liquid height (0-150°C scale)
+        const vesselLiquid = document.getElementById('vessel-liquid');
+        if (vesselLiquid) {
+            const vesselHeightPercent = Math.min(100, (currentTemp / MAX_THERMOMETER_TEMP) * 100);
+            const maxHeight = 60; // max height of vessel fill in SVG
+            vesselLiquid.setAttribute('height', (vesselHeightPercent / 100 * maxHeight).toString());
+            vesselLiquid.setAttribute('y', (86 - (vesselHeightPercent / 100 * maxHeight)).toString());
+        }
     }
 
     // ======================================================================
