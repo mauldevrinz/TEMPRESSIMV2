@@ -197,8 +197,8 @@ const App = (() => {
         }
 
         const endpoint = (dataType === 'temperature')
-            ? `/api/export/temperature-log${queryParams}`
-            : `/api/export/pressure-log${queryParams}`;
+            ? `${backendUrl}/api/export/temperature-log${queryParams}`
+            : `${backendUrl}/api/export/pressure-log${queryParams}`;
 
         try {
             const response = await fetch(endpoint);
@@ -338,7 +338,7 @@ const App = (() => {
 
             // 4. Kirim ke Backend
             try {
-                const response = await fetch('/api/sis-control', {
+                const response = await fetch(`${backendUrl}/api/sis-control`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -385,7 +385,7 @@ const App = (() => {
         const newLabel = isCurrentlyOpen ? 'CLOSE' : 'OPEN';
 
         try {
-            const res = await fetch('/api/sis-control', {
+            const res = await fetch(`${backendUrl}/api/sis-control`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ actuator: type, value: newValue })
@@ -474,7 +474,7 @@ const App = (() => {
         if (isNaN(pct)) { alert('Masukkan nilai % (20-80).'); return; }
 
         try {
-            const res = await fetch('/api/control/stepper', {
+            const res = await fetch(`${backendUrl}/api/control/stepper`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ value: pct, mode: 'manual' })
@@ -498,7 +498,7 @@ const App = (() => {
         const modeBtn = document.getElementById('btn-stepper-mode');
         if (stepperManualMode) {
             try {
-                const res = await fetch('/api/control/stepper', {
+                const res = await fetch(`${backendUrl}/api/control/stepper`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mode: 'auto' })
@@ -965,7 +965,7 @@ const App = (() => {
     // ======================================================================
     async function updateDataFromBackend() {
         try {
-            const resp = await fetch(`/api/latest-data`);
+            const resp = await fetch(`${backendUrl}/api/latest-data`);
             if (!resp.ok) throw new Error(`HTTP error! status: ${resp.status}`);
             const data = await resp.json();
 

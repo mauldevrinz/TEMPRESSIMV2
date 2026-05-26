@@ -18,14 +18,13 @@ app.use(cors());
 const port = 3000; // Port untuk server API
 app.use(bodyParser.json()); // Middleware untuk mengurai JSON body dari request HTTP
 
-// === 2. KONFIGURASI AZURE DATABASE & RECONNECT LOGIC ===
-// === 2. DATABASE — Pool (auto-reconnect, Azure-safe) ===
+// === 2. KONFIGURASI LOCAL DATABASE (VPS) ===
+// === 2. DATABASE — Pool (auto-reconnect, VPS-safe) ===
 const dbPool = mysql.createPool({
-    host: 'simulatorserver.mysql.database.azure.com',
-    user: 'auliazqi',
-    password: 'Admin123',
+    host: 'localhost',
+    user: 'simulator_user',
+    password: 'simulator_pass',
     database: 'simulator_db',
-    ssl: { rejectUnauthorized: false },
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -40,7 +39,7 @@ dbPool.getConnection((err, conn) => {
     if (err) {
         console.error('❌ Gagal koneksi database:', err.message);
     } else {
-        console.log('✅ Terkoneksi ke Azure Database.');
+        console.log('✅ Terkoneksi ke Local VPS Database.');
         conn.release();
     }
 });
